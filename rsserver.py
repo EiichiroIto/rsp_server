@@ -123,6 +123,13 @@ class RemoteSensorServer:
         message = message.encode('utf-8')
         return make_header(message)+message
 
+    def make_broadcast(self, str):
+        if str == "":
+            return ""
+        message = "broadcast "+str
+        message = message.encode('utf-8')
+        return make_header(message)+message
+
     def send(self, message):
         if message != "":
             for socket in self.clients:
@@ -131,6 +138,10 @@ class RemoteSensorServer:
 
     def sensor_update(self, dic):
         message = self.make_sensor_update(dic)
+        self.send(message)
+
+    def broadcast(self, str):
+        message = self.make_broadcast(str)
         self.send(message)
 
     def make_camera(self, image):
