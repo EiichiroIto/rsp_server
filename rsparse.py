@@ -2,25 +2,25 @@ import StringIO
 import os
 import doctest
 
-def untilQuote(inp):
+def until_quote(inp):
     """
     >>> inp = StringIO.StringIO('ABCDEF"GHI"')
-    >>> untilQuote(inp)
+    >>> until_quote(inp)
     'ABCDEF'
     >>> inp.read()
     'GHI"'
     >>> inp = StringIO.StringIO('a"b')
-    >>> untilQuote(inp)
+    >>> until_quote(inp)
     'a'
     >>> inp.read()
     'b'
     >>> inp = StringIO.StringIO('a four word string"')
-    >>> untilQuote(inp)
+    >>> until_quote(inp)
     'a four word string'
     >>> inp.read()
     ''
     >>> inp = StringIO.StringIO('embedded ""quotation marks"" are doubled"')
-    >>> untilQuote(inp)
+    >>> until_quote(inp)
     'embedded "quotation marks" are doubled'
     >>> inp.read()
     ''
@@ -39,20 +39,20 @@ def untilQuote(inp):
         out.write(c)
     return out.getvalue()
 
-def untilSpace(inp):
+def until_space(inp):
     """
     >>> inp = StringIO.StringIO('123 456')
-    >>> untilSpace(inp)
+    >>> until_space(inp)
     '123'
     >>> inp.read()
     '456'
     >>> inp = StringIO.StringIO('123')
-    >>> untilSpace(inp)
+    >>> until_space(inp)
     '123'
     >>> inp.read()
     ''
     >>> inp = StringIO.StringIO('123.1')
-    >>> untilSpace(inp)
+    >>> until_space(inp)
     '123.1'
     """
     out = StringIO.StringIO()
@@ -63,16 +63,16 @@ def untilSpace(inp):
         out.write(c)
     return out.getvalue()
 
-def parseArgument(inp):
+def parse_argument(inp):
     """
     >>> inp = StringIO.StringIO('123 456')
-    >>> parseArgument(inp)
+    >>> parse_argument(inp)
     [123, 456]
     >>> inp = StringIO.StringIO('123     456   ')
-    >>> parseArgument(inp)
+    >>> parse_argument(inp)
     [123, 456]
     >>> inp = StringIO.StringIO('"note" 60 "seconds" 0.1')
-    >>> parseArgument(inp)
+    >>> parse_argument(inp)
     ['note', 60, 'seconds', 0.1]
     """
     result = []
@@ -83,10 +83,10 @@ def parseArgument(inp):
         if c == ' ' or c == '\t':
             continue
         if c == '"':
-            ret = untilQuote(inp)
+            ret = until_quote(inp)
         else:
             inp.seek(-1, os.SEEK_CUR)
-            ret = untilSpace(inp)
+            ret = until_space(inp)
             if not (ret[0] in '0123456789-.'):
                 pass
             elif '.' in ret:
@@ -96,18 +96,18 @@ def parseArgument(inp):
         result.append(ret)
     return result
 
-def parseMessage(text):
+def parse_message(text):
     """
-    >>> parseMessage('peer-name anonymous')
+    >>> parse_message('peer-name anonymous')
     ('peer-name', ['anonymous'])
-    >>> parseMessage('sensor-update "note" 60 "seconds" 0.1')
+    >>> parse_message('sensor-update "note" 60 "seconds" 0.1')
     ('sensor-update', ['note', 60, 'seconds', 0.1])
-    >>> parseMessage('broadcast "play note"')
+    >>> parse_message('broadcast "play note"')
     ('broadcast', ['play note'])
     """
     inp = StringIO.StringIO(text)
-    command = untilSpace(inp)
-    return command, parseArgument(inp)
+    command = until_space(inp)
+    return command, parse_argument(inp)
 
 if __name__ == "__main__":
     doctest.testmod()
