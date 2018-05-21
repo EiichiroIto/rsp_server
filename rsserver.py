@@ -26,7 +26,7 @@ def make_header(message):
     return struct.pack("B"*4, a0, a1, a2, a3)
 
 class RemoteSensorServer:
-    def __init__(self, host='127.0.0.1', port=42001):
+    def __init__(self, host='', port=42001):
         self.host = host
         self.port = port
         self.sensors = {}
