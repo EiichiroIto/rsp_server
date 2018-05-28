@@ -41,18 +41,18 @@ class RemoteSensorServer:
             return
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.clients = set([self.socket])
-        self.thread = Thread(target=self.server_thread)
+        self.thread = Thread(target=self._server_thread)
         self.thread.daemon = True
         self.thread.start()
 
-    def server_thread(self):
-        print "server_thread"
+    def _server_thread(self):
+        print("server_thread")
         backlog = 10
         bufsize = 4096
         try:
             self.socket.bind((self.host, self.port))
             self.socket.listen(backlog)
-            print "Start select"
+            print("Start select")
             while self.socket is not None:
                 rready, wready, xready = select.select(self.clients, [], [], 1)
                 for sock in rready:
@@ -60,33 +60,33 @@ class RemoteSensorServer:
                         conn, address = self.socket.accept()
                         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                         self.clients.add(conn)
-                        message = self.make_sensor_update(self.sensors, True)
+                        message = self._make_sensor_update(self.sensors, True)
                         if message != "":
                             conn.send(message)
                     else:
                         msg = sock.recv(4)
                         if len(msg) == 0:
-                            self.detach_client(sock)
+                            self._detach_client(sock)
                         else:
                             a = struct.unpack("B"*4, msg)
                             sz = a[3]+(a[2]<<8)+(a[1]<<16)+(a[0]<<24)
-                            print sz
+                            print(sz)
                             msg = sock.recv(sz)
                             if len(msg) == 0:
-                                self.detach_client(sock)
+                                self._detach_client(sock)
                             else:
-                                print msg+"!"
-                                self.dispatch_message(msg)
+                                print(msg+"!")
+                                self._dispatch_message(msg)
         finally:
             self.stop()
 
-    def detach_client(self, socket):
-        print "detach_client"
+    def _detach_client(self, socket):
+        print("detach_client")
         socket.close()
         self.clients.remove(socket)
 
     def stop(self):
-        print "RemoteSensorServer stop"
+        print("RemoteSensorServer stop")
         if self.socket is None:
             return
         self.socket = None
@@ -97,7 +97,7 @@ class RemoteSensorServer:
     def is_running(self):
         return self.socket is not None
 
-    def dispatch_message(self, message):
+    def _dispatch_message(self, message):
         if self.controller is None:
             return
         text = unicode(message, 'utf-8')
@@ -108,7 +108,7 @@ class RemoteSensorServer:
         elif command == 'broadcast':
             self.controller.broadcast(lis[0])
 
-    def make_sensor_update(self, dic, forceAll=False):
+    def _make_sensor_update(self, dic, forceAll=False):
         message = ""
         for x in dic:
             v = dic[x]
@@ -123,35 +123,35 @@ class RemoteSensorServer:
         message = message.encode('utf-8')
         return make_header(message)+message
 
-    def make_broadcast(self, str):
+    def _make_broadcast(self, str):
         if str == "":
             return ""
         message = "broadcast "+str
         message = message.encode('utf-8')
         return make_header(message)+message
 
-    def send(self, message):
+    def _make_image(self, image, image_format):
+        message = image_format+" "+base64.b64encode(image)
+        message = message.encode('utf-8')
+        return make_header(message)+message
+
+    def _send(self, message):
         if message != "":
             for socket in self.clients:
                 if socket is not self.socket:
                     socket.send(message)
 
-    def sensor_update(self, dic):
-        message = self.make_sensor_update(dic)
-        self.send(message)
+    def send_sensor_update(self, dic):
+        message = self._make_sensor_update(dic)
+        self._send(message)
 
-    def broadcast(self, str):
-        message = self.make_broadcast(str)
-        self.send(message)
+    def send_broadcast(self, str):
+        message = self._make_broadcast(str)
+        self._send(message)
 
-    def make_camera(self, image):
-        message = self.controller.cameraFormat+" "+base64.b64encode(image)
-        message = message.encode('utf-8')
-        return make_header(message)+message
-
-    def camera(self, image):
-        message = self.make_camera(image)
-        self.send(message)
+    def send_image(self, image, image_format):
+        message = self._make_image(image, image_format)
+        self._send(message)
 
     def test(self):
         # To test, enter following code in python shell.
