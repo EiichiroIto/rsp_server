@@ -32,6 +32,7 @@ class RemoteSensorServer:
         self.sensors = {}
         self.socket = None
         self.controller = None
+        self.clients = {}
 
     def set_controller(self, controller):
         self.controller = controller
